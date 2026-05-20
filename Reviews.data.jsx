@@ -16,7 +16,7 @@ import React from 'react'
 // Paste your deployed Google Apps Script Web App URL here (see
 // google-apps-script-reviews.gs for the script + step-by-step setup).
 // Leave '' to keep the site on seed-only reviews + the e-mail fallback.
-export const REVIEWS_API = 'https://script.google.com/macros/s/AKfycbyHjp49xZv56_cYHPwVih_-kddphIxv--Qx7xqn5q8OuADKtbXedZkiClrgOOueuoYz/exec';
+export const REVIEWS_API = 'https://script.google.com/macros/s/AKfycbxjws-xbUSYe55wplb6mU3GV3DMJalOwnJQMUe4D8r4kiIp12zfzY6ukKxeUtFhnDCp/exec';
 
 // ALL site forms (reviews, driver applications, guest registration) POST to
 // this same Apps Script endpoint — it routes by a "type" field. One URL to
@@ -103,6 +103,18 @@ export const bgFor = (name) => {
   return BG_PALETTE[h % BG_PALETTE.length];
 };
 
+// Google Sheets often stores the date cell as a real Date, so the backend can
+// return a long timestamp ("Fri May 01 2026 02:00:00 GMT+0200 …"). Normalize
+// any parseable date to a clean "Май 2026"; leave already-clean labels as-is.
+function formatReviewDate(raw) {
+  if (!raw) return '';
+  const s = String(raw);
+  const t = Date.parse(s);
+  if (Number.isNaN(t)) return s; // e.g. seed labels like "Май 2026" (Cyrillic)
+  const out = new Date(t).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
+
 // Returns the reviews to render: seed reviews always, plus any approved ones
 // fetched from the Google Sheet backend (newest first). Falls back silently
 // to seed-only if the backend isn't configured or the fetch fails.
@@ -119,7 +131,7 @@ export function useReviews() {
           .filter((d) => d && d.name && d.text)
           .map((d) => ({
             name: String(d.name), trip: d.trip || '', text: String(d.text),
-            rating: Number(d.rating) || 5, date: d.date || '',
+            rating: Number(d.rating) || 5, date: formatReviewDate(d.date),
           }));
         if (fetched.length) setReviews([...fetched, ...REVIEWS]);
       })
