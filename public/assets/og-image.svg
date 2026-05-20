@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1E33"/>
+      <stop offset="0.6" stop-color="#112C4A"/>
+      <stop offset="1" stop-color="#0B1E33"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EE2E3D"/>
+      <stop offset="1" stop-color="#c01928"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#EE2E3D" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#EE2E3D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1050" cy="120" r="320" fill="url(#glow)"/>
+  <rect x="0" y="0" width="1200" height="8" fill="url(#red)"/>
+
+  <!-- Brand -->
+  <g transform="translate(80,70)">
+    <rect width="64" height="64" rx="16" fill="url(#red)"/>
+    <text x="32" y="44" text-anchor="middle" fill="#fff" font-size="26" font-weight="800">T2</text>
+    <text x="84" y="30" fill="#fff" font-size="30" font-weight="800" letter-spacing="-0.5">Transfer2EU</text>
+    <text x="84" y="56" fill="#9fb3c8" font-size="15" font-weight="600" letter-spacing="3">ALICANTE · 24/7</text>
+  </g>
+
+  <!-- Headline -->
+  <text x="80" y="250" fill="#ffffff" font-size="66" font-weight="800" letter-spacing="-1.5">Alicante Airport Transfer</text>
+  <text x="80" y="320" fill="#ffffff" font-size="66" font-weight="800" letter-spacing="-1.5">across <tspan fill="#ff6b75">Costa Blanca</tspan></text>
+
+  <!-- Sub -->
+  <text x="80" y="372" fill="#b9c6d6" font-size="26" font-weight="500">Fixed price · Russian-speaking driver · Meet &amp; greet</text>
+
+  <!-- Price chips -->
+  <g transform="translate(80,420)" font-weight="700" font-size="24">
+    <g>
+      <rect width="210" height="58" rx="14" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.16"/>
+      <text x="105" y="37" text-anchor="middle" fill="#fff">Benidorm 60€</text>
+    </g>
+    <g transform="translate(230,0)">
+      <rect width="190" height="58" rx="14" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.16"/>
+      <text x="95" y="37" text-anchor="middle" fill="#fff">Calpe 80€</text>
+    </g>
+    <g transform="translate(440,0)">
+      <rect width="230" height="58" rx="14" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.16"/>
+      <text x="115" y="37" text-anchor="middle" fill="#fff">Torrevieja 50€</text>
+    </g>
+  </g>
+
+  <!-- "from 30€" badge -->
+  <g transform="translate(890,440)">
+    <rect width="230" height="120" rx="22" fill="url(#red)"/>
+    <text x="115" y="52" text-anchor="middle" fill="#ffffff" font-size="20" font-weight="700" letter-spacing="1" opacity="0.85">FROM</text>
+    <text x="115" y="100" text-anchor="middle" fill="#ffffff" font-size="56" font-weight="800">30€</text>
+  </g>
+
+  <!-- Footer URL -->
+  <text x="80" y="585" fill="#7e93a8" font-size="22" font-weight="600">transfer2eu.com</text>
+</svg>
