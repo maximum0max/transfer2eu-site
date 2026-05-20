@@ -1,51 +1,47 @@
 /*****************************************************************************
- * Transfer2EU — Reviews backend (Google Apps Script)
+ * Transfer2EU — Forms backend (Google Apps Script)
  *
- * WHAT IT DOES
- *   • doPost  — a visitor submits a review on the site → a row is added to the
- *               "Reviews" sheet with Approved = FALSE, and you get an e-mail.
- *   • doGet   — the website reads this and shows ONLY rows where Approved = TRUE.
+ * ONE web app handles ALL site forms (reviews, driver applications, guest
+ * registration). The website POSTs JSON with a "type" field; this routes it:
+ *   • type:"review" → "Reviews" sheet (Approved=FALSE) + e-mail w/ approve link
+ *   • type:"driver" → "Drivers" sheet + e-mail
+ *   • type:"guest"  → "Guests"  sheet + e-mail (Guardia Civil registration)
+ * doGet returns APPROVED reviews as JSON (the website reads this to show them).
  *
- * So the flow is:  submit → e-mail to you + pending row → you tick Approved =
- * TRUE in the sheet → the review appears on the site automatically (no code).
+ * Each notification e-mail includes a direct link to the relevant sheet tab,
+ * so you can open it and (for reviews) set Approved = TRUE in one click.
  *
  * ──────────────────────────────────────────────────────────────────────────
- * ONE-TIME SETUP  (≈ 5 minutes)
- *   1. Go to https://sheets.google.com and create a new blank spreadsheet.
- *      Name it e.g. "Transfer2EU Reviews".
- *   2. In that sheet: menu  Extensions → Apps Script.
- *   3. Delete whatever code is there, paste THIS ENTIRE FILE, and save (💾).
- *   4. (Optional) change NOTIFY_EMAIL below if you want notices elsewhere.
- *   5. Click  Deploy → New deployment.
- *        • Click the gear ⚙ → select "Web app".
- *        • Description: anything (e.g. "reviews v1").
- *        • Execute as:        Me
- *        • Who has access:    Anyone
- *        • Click Deploy, then "Authorize access" and allow the permissions.
- *   6. Copy the "Web app URL" it shows (ends with /exec).
- *   7. Open  Reviews.data.jsx  in the site and paste that URL into:
- *        export const REVIEWS_API = 'PASTE_URL_HERE';
- *   8. Done. The sheet auto-creates a "Reviews" tab on the first submission.
- *      To publish a review, set its "Approved" cell to TRUE (a checkbox or the
- *      word TRUE). To hide one, set it back to FALSE.
+ * SETUP / RE-DEPLOY  (do this once, and again whenever you change this code)
+ *   1. Open your Google Sheet → Extensions → Apps Script.
+ *   2. Replace ALL the code with this file, save (💾).
+ *   3. Deploy → Manage deployments → ✏️ Edit the existing deployment
+ *        • Execute as:      Me
+ *        • Who has access:  Anyone        ←← MUST be "Anyone" (not "Only myself"
+ *                                            and not "Anyone with Google account")
+ *        • Version:         New version
+ *        • Deploy → Authorize access if asked.
+ *   4. The /exec URL stays the same — no change needed in the website.
+ *      (Only if you create a NEW deployment does the URL change; then paste it
+ *       into Reviews.data.jsx → REVIEWS_API.)
  *
- * NOTE: if you ever CHANGE this script, do Deploy → Manage deployments → edit
- * the existing one → "New version" so the same URL keeps working.
+ * VERIFY: open the /exec URL in a browser — you should see [] or a JSON list,
+ * NOT "Access denied / Acceso denegado".
  *****************************************************************************/
 
-var SHEET_NAME   = 'Reviews';
 var NOTIFY_EMAIL = 'transfers2eu@gmail.com';
-var HEADERS      = ['Timestamp', 'Name', 'Trip', 'Rating', 'Text', 'Date', 'Approved'];
 
-function getSheet_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(HEADERS);
-    sheet.setFrozenRows(1);
+function ss_() { return SpreadsheetApp.getActiveSpreadsheet(); }
+
+function sheetFor_(name, headers) {
+  var ss = ss_();
+  var sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.appendRow(headers);
+    sh.setFrozenRows(1);
   }
-  return sheet;
+  return sh;
 }
 
 function json_(obj) {
@@ -54,47 +50,55 @@ function json_(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Website reads approved reviews here.
+// Direct link to a specific sheet tab.
+function tabUrl_(sh) {
+  return ss_().getUrl() + '#gid=' + sh.getSheetId();
+}
+
+// Direct link that opens the sheet AND jumps to a specific cell (e.g. "G5"),
+// so you land right on the Approved cell of the new review.
+function cellUrl_(sh, a1) {
+  return ss_().getUrl() + '#gid=' + sh.getSheetId() + '&range=' + a1;
+}
+
+// ── Website reads approved reviews here ────────────────────────────────────
 function doGet() {
-  var sheet = getSheet_();
-  var rows = sheet.getDataRange().getValues();
+  var sh = sheetFor_('Reviews', ['Timestamp', 'Name', 'Trip', 'Rating', 'Text', 'Date', 'Approved']);
+  var rows = sh.getDataRange().getValues();
   var out = [];
   for (var i = 1; i < rows.length; i++) {
     var r = rows[i];
-    var approved = r[6];
-    var ok = approved === true || String(approved).trim().toUpperCase() === 'TRUE';
+    var ok = r[6] === true || String(r[6]).trim().toUpperCase() === 'TRUE';
     if (ok && r[1] && r[4]) {
-      out.push({
-        name:   r[1],
-        trip:   r[2],
-        rating: Number(r[3]) || 5,
-        text:   r[4],
-        date:   r[5] ? String(r[5]) : '',
-      });
+      out.push({ name: r[1], trip: r[2], rating: Number(r[3]) || 5, text: r[4], date: r[5] ? String(r[5]) : '' });
     }
   }
   out.reverse(); // newest first
   return json_(out);
 }
 
-// Website submits a new (pending) review here.
+// ── Website submits any form here ──────────────────────────────────────────
 function doPost(e) {
-  var data = {};
-  try { data = JSON.parse(e.postData.contents); } catch (err) { data = {}; }
+  var d = {};
+  try { d = JSON.parse(e.postData.contents); } catch (err) { d = {}; }
+  // Booking form intentionally NOT handled here — it goes only to WhatsApp.
+  var type = String(d.type || 'review');
+  if (type === 'driver') return handleDriver_(d);
+  if (type === 'guest')  return handleGuest_(d);
+  return handleReview_(d);
+}
 
-  var name = String(data.name || '').slice(0, 80).trim();
-  var trip = String(data.trip || '').slice(0, 80).trim();
-  var text = String(data.text || '').slice(0, 1500).trim();
-  var rating = Math.min(5, Math.max(1, Math.round(Number(data.rating) || 5)));
-
+function handleReview_(d) {
+  var name = String(d.name || '').slice(0, 80).trim();
+  var text = String(d.text || '').slice(0, 1500).trim();
   if (!name || !text) return json_({ ok: false, error: 'missing fields' });
-
-  var sheet = getSheet_();
-  var tz = Session.getScriptTimeZone();
-  var dateLabel = Utilities.formatDate(new Date(), tz, 'MMM yyyy');
-  // Columns: Timestamp, Name, Trip, Rating, Text, Date, Approved(FALSE)
-  sheet.appendRow([new Date(), name, trip, rating, text, dateLabel, false]);
-
+  var trip = String(d.trip || '').slice(0, 80).trim();
+  var rating = Math.min(5, Math.max(1, Math.round(Number(d.rating) || 5)));
+  var sh = sheetFor_('Reviews', ['Timestamp', 'Name', 'Trip', 'Rating', 'Text', 'Date', 'Approved']);
+  var date = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'MMM yyyy');
+  sh.appendRow([new Date(), name, trip, rating, text, date, false]);
+  var row = sh.getLastRow();           // the row we just added
+  var approveLink = cellUrl_(sh, 'G' + row); // G = "Approved" column
   try {
     MailApp.sendEmail(
       NOTIFY_EMAIL,
@@ -103,10 +107,56 @@ function doPost(e) {
       'Маршрут: ' + (trip || '—') + '\n' +
       'Оценка: ' + rating + ' / 5\n\n' +
       text + '\n\n' +
-      '— Чтобы опубликовать, откройте таблицу "' + SHEET_NAME +
-      '" и поставьте Approved = TRUE в этой строке.'
+      '▶ ОПУБЛИКОВАТЬ: откройте ссылку (курсор встанет на ячейку Approved этого\n' +
+      'отзыва) и впишите TRUE — отзыв появится на сайте:\n' + approveLink +
+      '\n\nВся таблица отзывов: ' + tabUrl_(sh)
     );
-  } catch (mailErr) { /* sheet row is saved even if e-mail fails */ }
+  } catch (err) {}
+  return json_({ ok: true });
+}
 
+function handleDriver_(d) {
+  // E-mail only — no sheet logging for driver applications (by request).
+  try {
+    MailApp.sendEmail(
+      NOTIFY_EMAIL,
+      'Анкета водителя: ' + (d.name || ''),
+      'Имя: ' + (d.name || '') + '\n' +
+      'Телефон: ' + (d.phone || '') + '\n' +
+      'Email: ' + (d.email || '') + '\n' +
+      'Марка авто: ' + (d.car || '') + '\n' +
+      'Год выпуска: ' + (d.year || '') + '\n' +
+      'Регион: ' + (d.region || '')
+    );
+  } catch (err) {}
+  return json_({ ok: true });
+}
+
+function handleGuest_(d) {
+  var sh = sheetFor_('Guests', [
+    'Timestamp', 'Nombre', 'Primer apellido', 'Segundo apellido', 'Fecha nacimiento',
+    'Nacionalidad', 'Tipo doc', 'Nº documento', 'Fecha expedición', 'Alojamiento',
+    'Entrada', 'Salida', 'Sexo', 'Residencia',
+  ]);
+  sh.appendRow([
+    new Date(), d.nombre || '', d.apellido1 || '', d.apellido2 || '', d.nacimiento || '',
+    d.nacionalidad || '', d.tipoDoc || '', d.numDoc || '', d.fechaExpedicion || '',
+    d.alojamiento || '', d.fechaEntrada || '', d.fechaSalida || '', d.sexo || '', d.residencia || '',
+  ]);
+  try {
+    MailApp.sendEmail(
+      NOTIFY_EMAIL,
+      'Registro de huésped (Guardia Civil): ' + (d.nombre || '') + ' ' + (d.apellido1 || ''),
+      'Nombre: ' + (d.nombre || '') + ' ' + (d.apellido1 || '') + ' ' + (d.apellido2 || '') + '\n' +
+      'Fecha de nacimiento: ' + (d.nacimiento || '') + '\n' +
+      'Nacionalidad: ' + (d.nacionalidad || '') + '\n' +
+      'Documento: ' + (d.tipoDoc || '') + ' ' + (d.numDoc || '') + ' (expedido ' + (d.fechaExpedicion || '') + ')\n' +
+      'Alojamiento: ' + (d.alojamiento || '') + '\n' +
+      'Entrada: ' + (d.fechaEntrada || '') + '  ·  Salida: ' + (d.fechaSalida || '') + '\n' +
+      'Sexo: ' + (d.sexo || '') + '\n' +
+      'País de residencia: ' + (d.residencia || '') + '\n\n' +
+      'Tabla de huéspedes:\n' + tabUrl_(sh)
+    );
+  } catch (err) {}
   return json_({ ok: true });
 }

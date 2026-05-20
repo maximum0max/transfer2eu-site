@@ -158,35 +158,21 @@ function ReviewForm() {
     e.preventDefault();
     if (!valid || sending) return;
     if (hp) { setDone(true); return; } // silently swallow bots
+    if (!REVIEWS_API) { setError('Форма временно недоступна. Напишите отзыв нам в WhatsApp.'); return; }
     setSending(true);
     setError('');
     try {
-      if (REVIEWS_API) {
-        // Google Sheet backend: saved as pending (Approved=FALSE) + e-mails the
-        // owner. text/plain avoids a CORS preflight against Apps Script.
-        await fetch(REVIEWS_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ name: form.name, trip: form.trip, rating: form.rating, text: form.text }),
-        });
-      } else {
-        // Fallback before the Sheet backend is configured: just e-mail it.
-        const res = await fetch('https://formsubmit.co/ajax/transfers2eu@gmail.com', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({
-            _subject: `Новый отзыв на сайте: ${form.name} (${form.rating}★)`,
-            _template: 'table',
-            _captcha: 'false',
-            Тип: 'ОТЗЫВ — на модерацию',
-            Имя: form.name,
-            Маршрут: form.trip || '—',
-            Оценка: `${form.rating} / 5`,
-            Отзыв: form.text,
-          }),
-        });
-        if (!res.ok) throw new Error('bad status');
-      }
+      // Apps Script backend: saved as pending (Approved=FALSE) + e-mails the
+      // owner with a link to approve. Apps Script doesn't return CORS headers,
+      // so a normal fetch throws when the browser tries to read the (redirected)
+      // response — even though the row IS written. `no-cors` sends it
+      // fire-and-forget; text/plain keeps it a simple request so no-cors allows it.
+      await fetch(REVIEWS_API, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ type: 'review', name: form.name, trip: form.trip, rating: form.rating, text: form.text }),
+      });
       setDone(true);
     } catch (err) {
       setError('Не удалось отправить. Напишите отзыв нам в WhatsApp — мы добавим его вручную.');

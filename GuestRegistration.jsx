@@ -1,4 +1,5 @@
 import React from 'react'
+import { FORMS_API } from './Reviews.data.jsx'
 // Secret guest-registration form (Guardia Civil / Real Decreto 933/2021).
 // Reached ONLY via the hash route #registro — it's not linked anywhere in the
 // site nav, so the public never sees it; the host shares the link privately
@@ -165,31 +166,34 @@ function GuestRegistration({ onNav }) {
     e.preventDefault();
     if (!valid || sending) return;
     if (hp) { setDone(true); return; } // honeypot — silently drop bots
+    if (!FORMS_API) { setError(t.error); return; }
     setSending(true); setError('');
     try {
-      const res = await fetch('https://formsubmit.co/ajax/transfers2eu@gmail.com', {
+      // Sent to the Apps Script backend (type:"guest"). no-cors fire-and-forget:
+      // Apps Script doesn't return CORS headers, so the response can't be read;
+      // the row is written + e-mailed regardless. text/plain keeps it a simple
+      // request so no-cors permits it. A true network failure still rejects.
+      await fetch(FORMS_API, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          _subject: `Registro de huésped (Guardia Civil): ${form.nombre} ${form.apellido1}`,
-          _template: 'table',
-          _captcha: 'false',
-          Nombre: form.nombre,
-          'Primer apellido': form.apellido1,
-          'Segundo apellido': form.apellido2 || '—',
-          'Fecha de nacimiento': form.nacimiento,
-          Nacionalidad: form.nacionalidad,
-          'Tipo de documento': form.tipoDoc,
-          'Número de documento': form.numDoc,
-          'Fecha de expedición': form.fechaExpedicion,
-          Alojamiento: form.alojamiento,
-          'Fecha de entrada': form.fechaEntrada,
-          'Fecha de salida': form.fechaSalida,
-          Sexo: form.sexo,
-          'País de residencia': form.residencia,
+          type: 'guest',
+          nombre: form.nombre,
+          apellido1: form.apellido1,
+          apellido2: form.apellido2,
+          nacimiento: form.nacimiento,
+          nacionalidad: form.nacionalidad,
+          tipoDoc: form.tipoDoc,
+          numDoc: form.numDoc,
+          fechaExpedicion: form.fechaExpedicion,
+          alojamiento: form.alojamiento,
+          fechaEntrada: form.fechaEntrada,
+          fechaSalida: form.fechaSalida,
+          sexo: form.sexo,
+          residencia: form.residencia,
         }),
       });
-      if (!res.ok) throw new Error('bad status');
       setDone(true);
     } catch (err) {
       setError(t.error);

@@ -373,32 +373,10 @@ function BookingForm({ initialSlug = '', lockDestination = false }) {
   }
 
   /* ════════════════ STEP 2 ════════════════ */
-  const sendEmail = () => {
-    const priceLine = fromMode === 'other' ? 'уточним в чате' : `${effectivePrice}€ (${vehicleLabel})`;
-    fetch('https://formsubmit.co/ajax/transfers2eu@gmail.com', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({
-        _subject: `Новая заявка Transfer2EU: ${fromLabel} → ${toLabel}`,
-        _template: 'table',
-        _captcha: 'false',
-        Маршрут: `${fromLabel} → ${toLabel}`,
-        Стоимость: priceLine,
-        Имя: form.name,
-        Телефон: form.phone,
-        Дата: form.date,
-        [timeLabel]: form.time,
-        'Номер рейса': form.flight || '—',
-        Пассажиров: form.passengers,
-        Багаж: form.luggage,
-        Примечания: form.notes || '—',
-      }),
-    }).catch((err) => console.error('Email send failed', err));
-  };
-
+  // The booking goes ONLY to WhatsApp (the button is a link to buildWaUrl()).
+  // No e-mail/sheet copy by request — WhatsApp is the single channel.
   const onSubmit = (e) => {
     if (!formValid) { e.preventDefault(); return; }
-    sendEmail();
     setDone(true);
   };
 

@@ -1,6 +1,7 @@
 import React from 'react'
 import PageHero from './PageHero.jsx'
 import CTABanner from './CTABanner.jsx'
+import { FORMS_API } from './Reviews.data.jsx'
 
 const REQUIREMENTS = [
   { icon: '🕐', title: 'Пунктуальность',     text: 'Подача за 10 минут до согласованного времени. Опоздание — недопустимо.' },
@@ -31,25 +32,25 @@ function DriversPage({ onNav }) {
     e.preventDefault();
     if (sending) return;
     if (hp) { setSubmitted(true); return; } // silently drop bots
+    if (!FORMS_API) { setError('Форма временно недоступна. Напишите нам в WhatsApp.'); return; }
     setSending(true); setError('');
     try {
-      const res = await fetch('https://formsubmit.co/ajax/transfers2eu@gmail.com', {
+      // Apps Script backend (type:"driver"), no-cors fire-and-forget — see the
+      // note in GuestRegistration.jsx for why we can't read the response.
+      await fetch(FORMS_API, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          _subject: `Анкета водителя: ${form.name}`,
-          _template: 'table',
-          _captcha: 'false',
-          Тип: 'АНКЕТА ВОДИТЕЛЯ',
-          Имя: form.name,
-          Телефон: form.phone,
-          Email: form.email,
-          'Марка авто': form.car,
-          'Год выпуска': form.year,
-          'Регион проживания': form.region,
+          type: 'driver',
+          name: form.name,
+          phone: form.phone,
+          email: form.email,
+          car: form.car,
+          year: form.year,
+          region: form.region,
         }),
       });
-      if (!res.ok) throw new Error('bad status');
       setSubmitted(true);
     } catch (err) {
       setError('Не удалось отправить анкету. Напишите нам в WhatsApp — примем заявку вручную.');

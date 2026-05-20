@@ -16,7 +16,12 @@ import React from 'react'
 // Paste your deployed Google Apps Script Web App URL here (see
 // google-apps-script-reviews.gs for the script + step-by-step setup).
 // Leave '' to keep the site on seed-only reviews + the e-mail fallback.
-export const REVIEWS_API = 'https://script.google.com/macros/s/AKfycbyOGWdveyZOurmCVQkl8Awp-npHQthciJHSRKLaz0i_alANiWjCwxqRhAJOYOfIimc/exec';
+export const REVIEWS_API = 'https://script.google.com/macros/s/AKfycbyHjp49xZv56_cYHPwVih_-kddphIxv--Qx7xqn5q8OuADKtbXedZkiClrgOOueuoYz/exec';
+
+// ALL site forms (reviews, driver applications, guest registration) POST to
+// this same Apps Script endpoint — it routes by a "type" field. One URL to
+// manage. (formsubmit.co was dropped — it was unreliable and went down.)
+export const FORMS_API = REVIEWS_API;
 
 export const REVIEWS = [
   {

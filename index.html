@@ -221,10 +221,18 @@
   html, body { margin: 0; overflow-x: hidden; max-width: 100%; }
   body { background: #fff; color: #0F1216; -webkit-text-size-adjust: 100%; }
   a { cursor: pointer; }
-  img, svg, video { max-width: 100%; height: auto; }
-  /* Tighter section gutters on phones — keeps content off the screen edge */
+  img, svg, video, iframe { max-width: 100%; }
+  img, svg, video { height: auto; }
+  /* Inputs/selects/textareas never overflow their container on mobile */
+  input, select, textarea, button { max-width: 100%; }
+  /* Phones: tighter section gutters + a bit less vertical air than desktop */
   @media (max-width: 600px) {
     section { padding-left: 16px !important; padding-right: 16px !important; }
+  }
+  /* 16px min input font on phones so iOS doesn't zoom on focus (overrides
+     the inline font-size some inputs set, e.g. search/driver fields). */
+  @media (max-width: 600px) {
+    input, select, textarea { font-size: 16px !important; }
   }
 </style>
 </head>
