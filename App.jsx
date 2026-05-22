@@ -104,6 +104,18 @@ export default function App() {
   const onSelectRoute = (slug) => { setRouteSlug(slug); setView('route'); window.scrollTo(0, 0); };
   const onOpenPost    = (slug) => { setPostSlug(slug); setView('news-post'); window.scrollTo(0, 0); };
 
+  // Secret guest-registration page is fully standalone — no header, footer or
+  // nav, so guests can only fill the form, not browse the marketing site.
+  if (view === 'registro') {
+    return (
+      <div data-screen-label="registro">
+        <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--t2-bg-2)' }} />}>
+          <GuestRegistration />
+        </Suspense>
+      </div>
+    );
+  }
+
   return (
     <div data-screen-label={view}>
       <Header view={view} onNav={onNav} />
@@ -127,7 +139,6 @@ export default function App() {
             {view === 'drivers'   && <DriversPage  onNav={onNav} />}
             {view === 'route'     && <RoutePage slug={routeSlug} onNav={onNav} onSelectRoute={onSelectRoute} />}
             {view === 'reviews'   && <ReviewsPage onNav={onNav} />}
-            {view === 'registro'  && <GuestRegistration onNav={onNav} />}
             {view === 'news'      && <NewsList onOpenPost={onOpenPost} onNav={onNav} />}
             {view === 'news-post' && <NewsPost slug={postSlug} onNav={onNav} />}
           </Suspense>

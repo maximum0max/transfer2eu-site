@@ -124,7 +124,7 @@ function GuestRegistration({ onNav }) {
     form.fechaEntrada && form.fechaSalida && form.sexo && form.residencia;
 
   /* styles — match the site's form chrome */
-  const page = { background: 'var(--t2-bg-2)', minHeight: '70vh' };
+  const page = { background: 'var(--t2-bg-2)', minHeight: '100vh' };
   const wrap = { maxWidth: 720, margin: '0 auto', padding: '56px 24px 72px' };
   const top = { textAlign: 'center', marginBottom: 24 };
   const stripe = { height: 4, background: 'linear-gradient(90deg, var(--t2-red) 0%, #c01928 100%)' };
