@@ -66,8 +66,9 @@ export const REVIEWS = [
   },
 ];
 
-// Aggregate rating shown in the summary band. Keep in sync with the JSON-LD
-// AggregateRating in index.html if you change it.
+// Aggregate rating shown in the on-page summary band. (Not emitted as JSON-LD:
+// Google disallows self-serving review/rating markup on a business, so it was
+// removed from index.html to fix a Search Console structured-data error.)
 export const REVIEW_STATS = {
   rating: 4.9,
   count: 127,
