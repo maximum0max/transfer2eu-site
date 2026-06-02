@@ -9,6 +9,7 @@ import HowItWorks from './HowItWorks.jsx'
 import Testimonial from './Testimonial.jsx'
 import FAQ from './FAQ.jsx'
 import CTABanner from './CTABanner.jsx'
+import HomeBookingSection from './HomeBookingSection.jsx'
 import Reveal from './Reveal.jsx'
 
 // Sub-pages aren't needed for the first paint of the home view — split
@@ -128,6 +129,7 @@ export default function App() {
             <Reveal><HowItWorks /></Reveal>
             <Reveal><Testimonial onNav={onNav} /></Reveal>
             <Reveal><FAQ /></Reveal>
+            <Reveal><HomeBookingSection /></Reveal>
             <Reveal><CTABanner onNav={onNav} /></Reveal>
           </>
         )}
