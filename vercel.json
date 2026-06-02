@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "comment": "Single-URL SPA: 301-redirect every unknown path to '/' so the legacy URLs Google still has in its index (404s in Search Console) get cleaned up. Real static files at the listed prefixes are excluded and served normally.",
+  "redirects": [
+    {
+      "source": "/:path((?!api/|assets/|fonts/|uploads/|favicon|apple-touch|web-app-manifest|site\\.webmanifest|robots\\.txt|sitemap\\.xml|og-image).+)",
+      "destination": "/",
+      "permanent": true
+    }
+  ]
+}
